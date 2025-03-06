@@ -32,3 +32,4 @@ Ml model is refered from https://github.com/dhavalpotdar/detecting-offensive-lan
 ![check_status](https://user-images.githubusercontent.com/69105858/146495974-98d031ce-4ca5-4bdb-8811-cf3e295666cb.PNG)
 ![login](https://user-images.githubusercontent.com/69105858/146495992-13a891d6-d9ba-4017-987f-97ee084f8bc5.PNG)
 ![home](https://user-images.githubusercontent.com/69105858/146496000-465bb3db-3303-4490-bd55-28d833828192.PNG)
+# sentimentAI
