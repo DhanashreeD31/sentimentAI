@@ -12,5 +12,4 @@ flask
 flask-mysqldb  # Correcting flask_mysqldbs
 wtforms
 passlib
-functools  # Not needed in requirements.txt (built-in module)
 flask-login
