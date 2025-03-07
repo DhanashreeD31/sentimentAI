@@ -13,3 +13,5 @@ flask-mysqldb  # Correcting flask_mysqldbs
 wtforms
 passlib
 flask-login
+gunicorn
+
