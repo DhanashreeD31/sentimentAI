@@ -5,7 +5,9 @@ from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from passlib.hash import sha256_crypt
 from functools import wraps
 from flask_login import login_user,LoginManager
-import twpre_cls as ml
+import Ml_model as ml
+
+
 import random
 
 
