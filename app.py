@@ -9,6 +9,9 @@ import Ml_model as ml
 
 
 import random
+import nltk
+nltk.download('stopwords')
+
 
 
 app =  Flask(__name__)
