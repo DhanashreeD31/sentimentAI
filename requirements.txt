@@ -1,0 +1,16 @@
+tweepy
+pandas
+scikit-learn
+numpy
+nltk
+matplotlib
+seaborn
+textstat   
+pickle-mixin  # For pickle compatibility
+joblib
+flask
+flask-mysqldb  # Correcting flask_mysqldbs
+wtforms
+passlib
+functools  # Not needed in requirements.txt (built-in module)
+flask-login
