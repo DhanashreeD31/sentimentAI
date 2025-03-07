@@ -1,26 +1,21 @@
 tweepy
-time
-json
-csv
 pandas
-sklearn
+scikit-learn
 numpy
 nltk
 matplotlib
 seaborn
 textstat   
-pickle
+pickle-mixin  # For pickle compatibility
 joblib
 flask
-flask_mysqldb
+flask-mysqldb  
 wtforms
-passlib.hash
-functools
-flask_login
-random
+passlib
+flask-login
 
 
-*Might need additional packages based on your system config/env*
+
     
 
 
