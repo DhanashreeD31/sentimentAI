@@ -15,6 +15,8 @@ nltk.download('stopwords')
 
 
 app =  Flask(__name__)
+app.secret_key = 'your-secret-key-here'
+
 #generates a random string
 def creuid():
     num1=0
@@ -31,9 +33,9 @@ num= random.randint(0, 1000)
 
 
 app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'your username here' #MySQL username
-app.config['MYSQL_PASSWORD'] = 'your password here' #MySQl password
-app.config['MYSQL_DB'] = 'cybergaruna' #MySql database 
+app.config['MYSQL_USER'] = 'root'  # Default MySQL username
+app.config['MYSQL_PASSWORD'] = 'Dhanu777%'   # Replace with your actual MySQL root password
+app.config['MYSQL_DB'] = 'cybergaruna'
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 mysql = MySQL(app)
 
@@ -60,38 +62,30 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Get Form Fields
-        username = request.form['username']
-        password_candidate = request.form['password']
-
-        # Create cursor
-        cur = mysql.connection.cursor()
-
-        # Get user by username
-        result = cur.execute("SELECT * FROM users WHERE username = %s", [username])
-
-        if result > 0:
-            # Get stored hash
-            data = cur.fetchone()
-            password = data['password']
-
-            # Compare Passwords
-
-            #if password_candidate==password :
-            if sha256_crypt.verify(password_candidate, password):
-                # Passed
-                session['logged_in'] = True
-                session['username'] = username
-                return redirect(url_for('dashboard'))
+        cur = None
+        try:
+            username = request.form['username']
+            password_candidate = request.form['password']
+            cur = mysql.connection.cursor()
+            result = cur.execute("SELECT * FROM users WHERE username = %s", [username])
+            if result > 0:
+                data = cur.fetchone()
+                password = data['password']
+                if sha256_crypt.verify(password_candidate, password):
+                    session['logged_in'] = True
+                    session['username'] = username
+                    return redirect(url_for('dashboard'))
+                else:
+                    flash("Check the Username and Password")
             else:
-                flash("Check the Username and Password")
-                return render_template('login.html')
-            # Close connection
-            cur.close()
-        else:
-            error = 'Username not found'
-            return render_template('login.html', error=error)
-
+                flash('Username not found', 'error')
+            return render_template('login.html')
+        except Exception as e:
+            flash('Error during login', 'error')
+            return render_template('login.html')
+        finally:
+            if cur:
+                cur.close()
     return render_template('login.html')
 
 
@@ -110,40 +104,58 @@ def logout():
 @app.route('/dashboard', methods=['GET', 'POST'])
 @login_required
 def dashboard():
-    if request.method == 'POST':
+    datam = []
+    cur = None
+    try:
         cur = mysql.connection.cursor()
         result = cur.execute("SELECT * FROM regcases")   
-        if result > 0:   
+        if result > 0:
             datam = cur.fetchall()
-        return render_template('sampletable.html',data1=datam)
-    else:
-        cur = mysql.connection.cursor()
-        result = cur.execute("SELECT * FROM regcases")   
-        if result > 0:   
-            datam = cur.fetchall()
-        return render_template('sampletable.html',data1=datam)
+        return render_template('sampletable.html', data1=datam)
+    except Exception as e:
+        flash('Error loading dashboard', 'error')
+        return render_template('sampletable.html', data1=datam)
+    finally:
+        if cur:
+            cur.close()
         
 @app.route('/accepted', methods=['GET', 'POST'])
 @login_required
 #table of accepted cases
 def accepted():
-    if request.method == 'POST':
+    data = []
+    cur = None
+    try:
         cur = mysql.connection.cursor()
         result = cur.execute("SELECT * FROM acceptedcomplaints")   
-        if result > 0:   
+        if result > 0:
             data = cur.fetchall()
-        return render_template('accepted_cases.html',data1 =data)
+        return render_template('accepted_cases.html', data1=data)
+    except Exception as e:
+        flash('Error loading accepted cases', 'error')
+        return render_template('accepted_cases.html', data1=data)
+    finally:
+        if cur:
+            cur.close()
 
 #table of rejected cases
 @app.route('/rejected', methods=['GET', 'POST'])
 @login_required
 def rejected():
-    if request.method == 'POST':
+    data = []
+    cur = None
+    try:
         cur = mysql.connection.cursor()
         result = cur.execute("SELECT * FROM rejectedcomplaints")   
-        if result > 0:   
+        if result > 0:
             data = cur.fetchall()
-        return render_template('rejected_cases.html',data1 =data)
+        return render_template('rejected_cases.html', data1=data)
+    except Exception as e:
+        flash('Error loading rejected cases', 'error')
+        return render_template('rejected_cases.html', data1=data)
+    finally:
+        if cur:
+            cur.close()
 
 
 #table of registered cases
@@ -155,15 +167,23 @@ def regcomp():
 @app.route('/submit_complaint', methods=['GET', 'POST'])
 def sub_comp():
     if request.method == 'POST':
-        unid=creuid()
-        case_type=request.form['ctype']
-        case_desc=request.form['cdesc']
-        case_proof=request.form['clink']
-        cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO regcases(id, ctype, cdescription, clink) VALUES(%s, %s, %s, %s)", (unid, case_type, case_desc, case_proof))
-        mysql.connection.commit()
-        cur.close()
-        return render_template('reg_success.html',unid=str(unid))
+        cur = None
+        try:
+            unid = creuid()
+            case_type = request.form['ctype']
+            case_desc = request.form['cdesc']
+            case_proof = request.form['clink']
+            cur = mysql.connection.cursor()
+            cur.execute("INSERT INTO regcases(id, ctype, cdescription, clink) VALUES(%s, %s, %s, %s)", 
+                       (unid, case_type, case_desc, case_proof))
+            mysql.connection.commit()
+            return render_template('reg_success.html', unid=str(unid))
+        except Exception as e:
+            if cur:
+                mysql.connection.rollback()
+            flash('Error submitting complaint', 'error')
+            return render_template('regcomp.html')
+    return render_template('regcomp.html')
 
 
 
@@ -173,31 +193,72 @@ def chkcomp():
     return render_template('check.html')
 
 
-#about
-@app.route('/about')
-
-def about():
-    return render_template('about.html')
-
 #view complaints
 @app.route('/view', methods=['GET', 'POST'])
 @login_required
 def getid():
     if request.method == 'POST':
-        getval=request.form['getval']
+        getval = request.form['getval']
         cur = mysql.connection.cursor()
         result = cur.execute("SELECT * FROM regcases WHERE id = %s", [getval])
         if result > 0:
             data = cur.fetchone()
-            case_id=data['id']
-            case_type=data['ctype']
-            case_desc=data['cdescription']
-            case_proof=data['clink']    
-    return render_template('viewcase.html',getval =case_id, case_type=case_type,case_desc=case_desc,case_proof=case_proof)
- 
- 
- #add to accepted table
-    
+            case_id = data['id']
+            case_type = data['ctype']
+            case_desc = data['cdescription']
+            case_proof = data['clink']    
+            return render_template('viewcase.html', getval=case_id, case_type=case_type, case_desc=case_desc, case_proof=case_proof)
+    return redirect(url_for('dashboard'))
+
+@app.route('/test_complaint', methods=['GET', 'POST'])
+@login_required
+def test_complaint():
+    if request.method == 'POST':
+        cur = None
+        try:
+            complaint_id = request.form.get('complaint_id')
+            if not complaint_id:
+                flash('No complaint ID provided', 'error')
+                return redirect(url_for('dashboard'))
+                
+            cur = mysql.connection.cursor()
+            result = cur.execute("SELECT * FROM regcases WHERE id = %s", [complaint_id])
+            if result > 0:
+                complaint = cur.fetchone()
+                complaint_text = complaint['cdescription']
+                
+                if not complaint_text or len(complaint_text.strip()) == 0:
+                    flash('Error: The complaint text is empty', 'error')
+                    return redirect(url_for('dashboard'))
+                
+                # Test the complaint text using ML model
+                test_result = ml.test_complaint(complaint_text)
+                if test_result:
+                    return render_template('test_result.html', 
+                        complaint=complaint,
+                        result=test_result,
+                        is_bullying=test_result['is_bullying'],
+                        confidence=test_result['confidence'] * 100,
+                        processed_text=test_result['processed_text']
+                    )
+                else:
+                    flash('The text could not be analyzed. It may contain no valid words or only gibberish.', 'error')
+                    return redirect(url_for('dashboard'))
+            else:
+                flash('Complaint not found', 'error')
+                return redirect(url_for('dashboard'))
+        except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print("Error in test_complaint route:", error_details)
+            flash(f'Error processing complaint: {str(e)}', 'error')
+            return redirect(url_for('dashboard'))
+        finally:
+            if cur:
+                cur.close()
+    return redirect(url_for('dashboard'))
+
+#add to accepted table
 @app.route('/comp_add_res', methods=['GET', 'POST'])
 @login_required
 def addcse():
@@ -283,6 +344,7 @@ def chkstatus():
                 return render_template('check.html')
         
     
+
 if __name__=="__main__":
     
     app.secret_key='secret123'

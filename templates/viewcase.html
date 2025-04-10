@@ -38,17 +38,22 @@
             </p>
 
         </div>
-        <div class="btns">
-
-            <form action="/comp_add_res" method="post">
-                <button id="grn" class="donebtn" type="submit" name="compres" value={{getval}}>Review</button>
+        <div class="mt-4">
+            <form action="{{ url_for('test_complaint') }}" method="POST" style="display: inline;">
+                <input type="hidden" name="complaint_id" value="{{ getval }}">
+                <button type="submit" class="btn btn-primary">Test for Bullying</button>
             </form>
-            <form action="/comp_del_res" method="post">
-                <button id="red" class="donebtn" type="submit" name="compres" value={{getval}}>Ignore</button>
+            
+            <form action="{{ url_for('addcse') }}" method="POST" style="display: inline;">
+                <input type="hidden" name="compres" value="{{ getval }}">
+                <button type="submit" class="btn btn-success">Accept Case</button>
+            </form>
+            
+            <form action="{{ url_for('dellcse') }}" method="POST" style="display: inline;">
+                <input type="hidden" name="compres" value="{{ getval }}">
+                <button type="submit" class="btn btn-danger">Reject Case</button>
             </form>
         </div>
-
-
     </div>
     </div>
 </body>

@@ -38,9 +38,7 @@ testing_data = count_vector.transform(X_test)
 
 # 🔹 Define models
 models = [
-    MultinomialNB(), DecisionTreeClassifier(), LinearSVC(), AdaBoostClassifier(), 
-    RandomForestClassifier(), BaggingClassifier(), LogisticRegression(), SGDClassifier(), 
-    KNeighborsClassifier()
+    MultinomialNB()
 ]
 
 # 📌 Train models and evaluate performance

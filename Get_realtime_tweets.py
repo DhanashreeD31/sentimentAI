@@ -1,55 +1,94 @@
 
-import tweepy
+
+from tweepy.streaming import StreamListener
+from tweepy import OAuthHandler
+from tweepy import Stream
 import time
 import json
-import os
+import csv
 import pandas as pd
+consumer_key="06XOiUJzkG9RCAsvfAIjS3rNV" #insert your consumer key
+consumer_secret="AsAOmT61vqIhdM3RkeBsJBuiHL4ODyswRpFsH0Xnem1ldCAWaE" #insert your consumer secret
+access_token_key="1573316051789840384-2pZskK0WVy0BPS1tooZunyqXNMg1HP" #insert your access token key
+access_token_secret="GAHpmfSsiLZ5vCfG1zGS1XAhHVDYpiBU7KYB9ocOElDIw" #insert your access token secret
 
-BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAAFGozgEAAAAAycqQqRLvMIXmUSTcGWss9%2FMOhh0%3DvDD16rOQvkFjGh9GJ6asS8AR9MjxdBEwPAiRpuCmdA47pF7q2J"
 
+class TwitterAuthenticator():
 
+    def authenticate_twitter_app(self):        
+        auth=OAuthHandler(consumer_key, consumer_secret)
+        auth.set_access_token(access_token_key, access_token_secret)
+        return auth
 
-class TwitterListener(tweepy.StreamingClient):
-    def __init__(self, bearer_token, fetched_tweets_filename, time_limit=180):
-        super().__init__(bearer_token)
+class TwitterStreamer():
+    """
+    Class for streaming and processing live tweets.
+    """
+    def __init__(self):
+        self.twitter_autenticator = TwitterAuthenticator()    
+
+    def stream_tweets(self, fetched_tweets_filename, hash_tag_list):
+        # This handles Twitter authetification and the connection to Twitter Streaming API
+        listener = TwitterListener(fetched_tweets_filename)
+        auth = self.twitter_autenticator.authenticate_twitter_app() 
+        stream = Stream(auth, listener)
+
+        # This line filter Twitter Streams to capture data by the keywords: 
+        stream.filter(track=hash_tag_list)
+
+class TwitterListener(StreamListener):
+    """
+    This is a basic listener that just prints received tweets to stdout.
+    """
+    #listen tweets for a certain time (3 mins ie 180secs)
+    def __init__(self, fetched_tweets_filename, time_limit=180):
         self.start_time = time.time()
         self.limit = time_limit
         self.fetched_tweets_filename = fetched_tweets_filename
+        super(TwitterListener, self).__init__()
 
-    def on_tweet(self, tweet):
+
+    def on_data(self, data):
         if (time.time() - self.start_time) < self.limit:
-            print(tweet.text)
-            with open(self.fetched_tweets_filename, "a") as tf:
-                json.dump(tweet.data, tf)
-                tf.write("\n")
+            try:
+                with open(self.fetched_tweets_filename, 'a') as tf:
+                    tf.write(data)
+                return True
+            except BaseException as e:
+                print("Error on_data %s" % str(e))
+            return True
         else:
-            print("⏳ Time limit reached. Stopping stream.")
-            self.disconnect()
+          return False
+          
+    def on_error(self, status):
+        if status == 420:
+            # Returning False on_data method in case rate limit occurs.
+            return False
+        print(status)
+
 
 if __name__ == '__main__':
-    hash_tag_list = ["bullying", "hate speech", "violence"]
+    hash_tag_list = ["you're dumb", "you're ugly", "youre pussy", "fuck you", "bitch"]
     
+    #file name to beaved as json
     fetched_tweets_filename = "./livedata/real_time_tweets.json"
-    open(fetched_tweets_filename, 'w').close()
-
-    listener = TwitterListener("AAAAAAAAAAAAAAAAAAAAAFGozgEAAAAAycqQqRLvMIXmUSTcGWss9%2FMOhh0%3DvDD16rOQvkFjGh9GJ6asS8AR9MjxdBEwPAiRpuCmdA47pF7q2J", fetched_tweets_filename)
-
-    try:
-        rules = listener.get_rules()
-        if rules and rules.data:
-            listener.delete_rules([rule.id for rule in rules.data])
-        listener.add_rules(tweepy.StreamRule(" OR ".join(hash_tag_list)))
-        print("✅ Rules added successfully!")
-    except Exception as e:
-        print(f"⚠️ Could not update rules: {e}")
-
-    try:
-        listener.filter(tweet_fields=["text"])
-    except Exception as e:
-        print(f"❌ Streaming failed: {e}")
-
-
-
+    twitter_streamer = TwitterStreamer()
+    #open the json file and write real time twteets
+    open('./livedata/real_time_tweets.json', 'w').close()
+    print("Started...")
+    twitter_streamer.stream_tweets(fetched_tweets_filename, hash_tag_list)
+    
+    #ope the written jason file and convert it to dataframe
+    df = pd.read_json("./livedata/real_time_tweets.json", lines=True)
+    
+    #clean the tweets of last time
+    f = open("./livedata/real_time_tweets.csv", "w")
+    f.truncate()
+    f.close()
+    
+    #convert dataframe to csv
+    df.to_csv("./livedata/real_time_tweets.csv")
+    print("Done!")
 
 
 

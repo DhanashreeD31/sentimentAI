@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" dir="1tr">
+
+<head>
+    <meta charset="utf-8">
+    <title>Test Result</title>
+    <link rel="stylesheet" href="{{ url_for('static',filename='about.css') }}">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <style>
+        .result-box {
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
+        .bullying-true {
+            border-left: 5px solid #dc3545;
+        }
+        .bullying-false {
+            border-left: 5px solid #28a745;
+        }
+        .confidence-bar {
+            height: 20px;
+            border-radius: 10px;
+            background-color: rgba(255,255,255,0.1);
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .confidence-level {
+            height: 100%;
+            background-color: #007bff;
+            transition: width 0.5s ease;
+        }
+        .processed-text {
+            font-family: monospace;
+            background-color: rgba(0, 0, 0, 0.4);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .card {
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
+        .card-header {
+            background-color: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-start;
+            padding-left: 20px;
+        }
+        .custom-btn {
+            padding: 6px 15px;
+            border-radius: 0;
+            font-weight: normal;
+            transition: all 0.2s ease;
+            border: none;
+            background-color: #f8f9fa;
+            color: black;
+            font-size: 14px;
+            min-width: auto;
+            text-align: center;
+            text-transform: none;
+        }
+        .custom-btn:hover {
+            transform: none;
+            box-shadow: none;
+            background-color: #e9ecef;
+        }
+        .btn-back {
+            background-color: rgba(108, 117, 125, 0.4);
+        }
+        .btn-accept {
+            background-color: rgba(40, 167, 69, 0.4);
+        }
+        .btn-reject {
+            background-color: rgba(220, 53, 69, 0.4);
+        }
+        .btn-back:hover {
+            background-color: rgba(108, 117, 125, 0.6);
+        }
+        .btn-accept:hover {
+            background-color: rgba(40, 167, 69, 0.6);
+        }
+        .btn-reject:hover {
+            background-color: rgba(220, 53, 69, 0.6);
+        }
+    </style>
+</head>
+
+<body style="background-color: black;">
+    <div class='navbar'>
+        <div class="container">
+            <div class="logo">
+                <h1>Sentiment AI</h1>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/login">Login</a></li>
+                    <li><a href="/register_complaint">Bullied?</a></li>
+                    <li><a href="/check_complaint">Check?</a></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Test Results for Complaint #{{ complaint.id }}</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="result-box {% if is_bullying %}bullying-true{% else %}bullying-false{% endif %}">
+                            <h4>Analysis Result:</h4>
+                            <p class="lead">
+                                {% if is_bullying %}
+                                    <span class="text-danger">⚠️ This text contains bullying content</span>
+                                {% else %}
+                                    <span class="text-success">✓ This text appears to be non-bullying</span>
+                                {% endif %}
+                            </p>
+                            
+                            <h5>Confidence Level: {{ "%.2f"|format(confidence) }}%</h5>
+                            <div class="confidence-bar">
+                                <div class="confidence-level" style="width: {{ confidence }}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h4>Original Text:</h4>
+                            <p class="lead">{{ complaint.cdescription }}</p>
+                        </div>
+
+                        <div class="mt-4">
+                            <h4>Processed Text:</h4>
+                            <div class="processed-text">
+                                <small>{{ processed_text }}</small>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button type="button" class="custom-btn">Test</button>
+                            
+                            <form action="{{ url_for('addcse') }}" method="POST" style="display: inline;">
+                                <input type="hidden" name="compres" value="{{ complaint.id }}">
+                                <button type="submit" class="custom-btn">Accept Case</button>
+                            </form>
+                            
+                            <form action="{{ url_for('dellcse') }}" method="POST" style="display: inline;">
+                                <input type="hidden" name="compres" value="{{ complaint.id }}">
+                                <button type="submit" class="custom-btn">Reject Case</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</body>
+
+</html> 
